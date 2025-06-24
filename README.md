@@ -1,18 +1,19 @@
-# MongoDB Entity Framework Core Demo API
+# MongoDB .NET Driver Demo API
 
-This is a demo Web API application built with ASP.NET Core that demonstrates CRUD operations using MongoDB and the MongoDB Entity Framework Core Provider 9.0 with clean domain models and GUID identifiers.
+This is a demo Web API application built with ASP.NET Core that demonstrates CRUD operations using MongoDB and the official MongoDB .NET Driver 3.4.0 with clean domain models and GUID identifiers.
 
 ## Features
 
 - **Order Management**: Complete CRUD operations for orders
 - **Order Lines**: Support for multiple order lines per order
-- **MongoDB Integration**: Uses MongoDB.EntityFrameworkCore for data persistence
+- **MongoDB Integration**: Uses official MongoDB .NET Driver 3.4.0 for data persistence
 - **RESTful API**: Standard REST endpoints for all operations
 - **Clean Domain Models**: Domain entities free from infrastructure concerns
-- **GUID Identifiers**: Type-safe GUID identifiers with MongoDB conversion
-- **Data Validation**: Model validation with data annotations
+- **GUID Identifiers**: Type-safe GUID identifiers with MongoDB BSON conversion
+- **Data Validation**: Model validation with FluentValidation
 - **Error Handling**: Comprehensive error handling and logging
 - **Data Seeding**: Automatic database seeding with sample data on first startup
+- **Unit Testing**: Comprehensive test suite validating domain logic and repository implementation
 
 ## Prerequisites
 
@@ -23,20 +24,29 @@ This is a demo Web API application built with ASP.NET Core that demonstrates CRU
 
 ```
 EFTest/
-│   └── OrdersController.cs      # REST API controller with GUID routing
-├── Endpoints/
-│   └── OrderEndpoints.cs        # Minimal API endpoints for Orders
-├── Data/
-│   └── OrderContext.cs          # MongoDB DbContext with GUID conversion
-├── Models/
-├── Validators/
-│   ├── OrderValidator.cs        # FluentValidation rules for Order
-│   └── OrderLineValidator.cs    # FluentValidation rules for OrderLine
-│   ├── Order.cs                 # Clean Order domain entity with GUID Id
-│   └── OrderLine.cs             # Clean OrderLine domain entity with GUID Id
-├── Program.cs                   # Application startup
-├── appsettings.json             # Configuration
-└── EFTest.http                  # Sample HTTP requests with GUIDs
+├── EFTest.API/                  # Web API Layer
+│   ├── Endpoints/
+│   │   └── OrderEndpoints.cs    # Minimal API endpoints for Orders
+│   ├── Program.cs               # Application startup with MongoDB configuration
+│   └── appsettings.json         # Configuration with MongoDB connection string
+├── EFTest.Application/          # Application Layer (CQRS)
+│   ├── Commands/                # Command handlers
+│   ├── Queries/                 # Query handlers
+│   ├── DTOs/                    # Data Transfer Objects
+│   └── Validators/              # FluentValidation rules
+├── EFTest.Domain/               # Domain Layer (DDD)
+│   ├── Entities/                # Domain entities (Order, OrderLine)
+│   ├── ValueObjects/            # Value objects (Money, CustomerName, etc.)
+│   ├── Repositories/            # Repository interfaces
+│   └── DomainServices/          # Domain services
+├── EFTest.Infrastructure/       # Infrastructure Layer
+│   ├── Documents/               # MongoDB document models with BSON attributes
+│   ├── Services/                # MongoDB service implementations
+│   ├── Repositories/            # Repository implementations using MongoDB.Driver
+│   └── Configuration/           # MongoDB configuration settings
+└── EFTest.Tests/                # Unit Tests
+    ├── DomainModelTests.cs      # Domain logic validation tests
+    └── OrderRepositoryTests.cs  # Repository implementation tests
 ```
 
 ## Entities
@@ -178,11 +188,11 @@ The application uses GUIDs in the domain models but stores them as strings in Mo
 - **Route Constraints**: Uses `{id:guid}` for type-safe routing
 
 ### MongoDB Configuration
-All MongoDB-specific configuration is centralized in the `OrderContext`:
-- Entity-to-collection mappings
-- GUID to string conversion for storage
-- Property conversions and ignoring calculated properties
-- Relationship configurations
+All MongoDB-specific configuration is handled through:
+- **MongoDbSettings**: Configuration class for connection strings and collection names
+- **MongoDbService**: Service for MongoDB client and database access
+- **Document Models**: BSON-attributed models for MongoDB storage (OrderDocument, OrderLineDocument)
+- **Repository Implementation**: Direct MongoDB.Driver queries and operations
 
 ### Key Benefits
 - **Type Safety**: GUID identifiers prevent common ID-related bugs
@@ -206,8 +216,11 @@ All MongoDB-specific configuration is centralized in the `OrderContext`:
 
 This project uses the latest versions of the following packages:
 
-- **MongoDB.EntityFrameworkCore**: 9.0.0 (Latest)
-- **Microsoft.AspNetCore.OpenApi**: 9.0.5 (Latest)
+- **MongoDB.Driver**: 3.4.0 (Latest official MongoDB .NET Driver)
+- **Microsoft.AspNetCore.OpenApi**: 9.0.6 (Latest)
+- **FluentValidation.AspNetCore**: 11.3.1
+- **MediatR**: 12.5.0
+- **Moq**: 4.20.72 (for testing)
 - **.NET**: 9.0
 
 All packages are kept up to date with the latest stable releases for optimal performance and security.
@@ -226,6 +239,52 @@ The application automatically seeds the database with sample orders on first sta
 Each order contains realistic product data with quantities, unit prices, and calculated totals. The seeding only occurs if the database is empty, so it's safe to restart the application without duplicating data.
 
 To reset the data, simply clear your MongoDB database and restart the application.
+
+## Migration from EF Core to MongoDB .NET Driver
+
+This project was successfully migrated from MongoDB Entity Framework Core Provider to the official MongoDB .NET Driver. The migration included:
+
+### What Changed:
+- **Dependency**: Replaced `MongoDB.EntityFrameworkCore` with `MongoDB.Driver`
+- **Data Access**: Replaced EF Core `DbContext` with direct MongoDB client operations
+- **Document Models**: Created BSON-attributed document models for MongoDB storage
+- **Repository Implementation**: Rewrote repository using MongoDB.Driver query syntax
+- **Configuration**: Updated dependency injection to use MongoDB services
+
+### What Remained the Same:
+- **Domain Models**: All domain entities and business logic preserved unchanged
+- **API Endpoints**: All REST endpoints work exactly the same
+- **Application Layer**: CQRS handlers and DTOs unchanged
+- **Business Rules**: All domain validation and business rules preserved
+- **Data Format**: MongoDB documents maintain the same structure
+
+### Benefits of Migration:
+- **Performance**: Direct MongoDB driver operations are more efficient
+- **Features**: Access to full MongoDB feature set and latest updates
+- **Control**: Fine-grained control over MongoDB operations and queries
+- **Maintenance**: Official MongoDB support and regular updates
+- **Flexibility**: Easier to implement complex MongoDB-specific operations
+
+## Testing
+
+Run the comprehensive test suite to validate the migration:
+
+```bash
+# Run all tests
+dotnet test
+
+# Run specific test project
+dotnet test EFTest.Tests/
+
+# Run with detailed output
+dotnet test --verbosity normal
+```
+
+The test suite includes:
+- **Domain Model Tests**: Validate all business logic and domain rules
+- **Repository Tests**: Ensure MongoDB operations work correctly
+- **Value Object Tests**: Verify all validation rules are preserved
+- **Integration Tests**: End-to-end functionality validation
 
 ## Docker Compose Setup
 
