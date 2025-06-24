@@ -12,9 +12,6 @@ public class Order : Entity
     public Money TotalAmount { get; private set; }
     public IReadOnlyCollection<OrderLine> OrderLines => _orderLines.AsReadOnly();
 
-    // Parameterless constructor for EF Core
-    private Order() { }
-
     private Order(CustomerName customerName, DateTime orderDate)
     {
         CustomerName = customerName ?? throw new ArgumentNullException(nameof(customerName));

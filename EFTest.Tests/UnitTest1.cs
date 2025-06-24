@@ -2,7 +2,7 @@
 using MongoDB.Driver;
 using EFTest.Domain.Entities;
 using EFTest.Domain.ValueObjects;
-using EFTest.Infrastructure.Documents;
+using EFTest.Application.DTOs;
 using EFTest.Infrastructure.Repositories;
 using EFTest.Infrastructure.Services;
 
@@ -11,13 +11,13 @@ namespace EFTest.Tests;
 public class OrderRepositoryTests
 {
     private readonly Mock<IMongoDbService> _mockMongoDbService;
-    private readonly Mock<IMongoCollection<OrderDocument>> _mockCollection;
+    private readonly Mock<IMongoCollection<OrderDto>> _mockCollection;
     private readonly OrderRepository _repository;
 
     public OrderRepositoryTests()
     {
         _mockMongoDbService = new Mock<IMongoDbService>();
-        _mockCollection = new Mock<IMongoCollection<OrderDocument>>();
+        _mockCollection = new Mock<IMongoCollection<OrderDto>>();
 
         _mockMongoDbService.Setup(x => x.Orders).Returns(_mockCollection.Object);
         _repository = new OrderRepository(_mockMongoDbService.Object);

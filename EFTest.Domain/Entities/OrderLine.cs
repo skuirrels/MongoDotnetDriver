@@ -8,9 +8,6 @@ public class OrderLine : Entity
     public Quantity Quantity { get; private set; }
     public Money UnitPrice { get; private set; }
 
-    // Parameterless constructor for EF Core
-    private OrderLine() { }
-
     private OrderLine(ProductName productName, Quantity quantity, Money unitPrice)
     {
         ProductName = productName ?? throw new ArgumentNullException(nameof(productName));
