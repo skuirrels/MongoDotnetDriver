@@ -1,16 +1,21 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
+using EFTest.Infrastructure.Documents;
+using EFTest.Infrastructure.Services;
 
 namespace EFTest.Infrastructure.Data;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(OrderContext context, ILogger logger)
+    public static async Task SeedAsync(IMongoDbService mongoDbService, ILogger logger)
     {
         try
         {
+            var ordersCollection = mongoDbService.Orders;
+
             // Check if data already exists
-            if (await context.Orders.AnyAsync())
+            var existingCount = await ordersCollection.CountDocumentsAsync(Builders<OrderDocument>.Filter.Empty);
+            if (existingCount > 0)
             {
                 logger.LogInformation("Database already contains data. Skipping seeding.");
                 return;
@@ -18,18 +23,18 @@ public static class DataSeeder
 
             logger.LogInformation("Seeding database with sample orders...");
 
-            var orders = new List<OrderEntity>
+            var orders = new List<OrderDocument>
             {
-                new OrderEntity
+                new OrderDocument
                 {
                     Id = Guid.NewGuid(),
                     CustomerName = "John Doe",
                     OrderDate = DateTime.UtcNow.AddDays(-5),
                     TotalAmount = 2619.96m,
                     Currency = "USD",
-                    OrderLines = new List<OrderLineEntity>
+                    OrderLines = new List<OrderLineDocument>
                     {
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "MacBook Pro 16\"",
@@ -37,7 +42,7 @@ public static class DataSeeder
                             UnitPrice = 2499.99m,
                             Currency = "USD"
                         },
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "Magic Mouse",
@@ -45,7 +50,7 @@ public static class DataSeeder
                             UnitPrice = 79.99m,
                             Currency = "USD"
                         },
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "USB-C Cable",
@@ -55,16 +60,16 @@ public static class DataSeeder
                         }
                     }
                 },
-                new OrderEntity
+                new OrderDocument
                 {
                     Id = Guid.NewGuid(),
                     CustomerName = "Jane Smith",
                     OrderDate = DateTime.UtcNow.AddDays(-3),
                     TotalAmount = 1389.98m,
                     Currency = "USD",
-                    OrderLines = new List<OrderLineEntity>
+                    OrderLines = new List<OrderLineDocument>
                     {
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "Dell XPS 13",
@@ -72,7 +77,7 @@ public static class DataSeeder
                             UnitPrice = 1299.99m,
                             Currency = "USD"
                         },
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "Wireless Keyboard",
@@ -82,16 +87,16 @@ public static class DataSeeder
                         }
                     }
                 },
-                new OrderEntity
+                new OrderDocument
                 {
                     Id = Guid.NewGuid(),
                     CustomerName = "Bob Johnson",
                     OrderDate = DateTime.UtcNow.AddDays(-1),
                     TotalAmount = 2599.94m,
                     Currency = "USD",
-                    OrderLines = new List<OrderLineEntity>
+                    OrderLines = new List<OrderLineDocument>
                     {
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "iPhone 15 Pro",
@@ -99,7 +104,7 @@ public static class DataSeeder
                             UnitPrice = 999.99m,
                             Currency = "USD"
                         },
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "AirPods Pro",
@@ -107,7 +112,7 @@ public static class DataSeeder
                             UnitPrice = 249.99m,
                             Currency = "USD"
                         },
-                        new OrderLineEntity
+                        new OrderLineDocument
                         {
                             Id = Guid.NewGuid(),
                             ProductName = "iPhone Case",
@@ -119,9 +124,8 @@ public static class DataSeeder
                 }
             };
 
-            // Add orders to context
-            await context.Orders.AddRangeAsync(orders);
-            await context.SaveChangesAsync();
+            // Insert orders into MongoDB
+            await ordersCollection.InsertManyAsync(orders);
 
             logger.LogInformation("Successfully seeded {OrderCount} orders with {OrderLineCount} order lines.",
                 orders.Count,

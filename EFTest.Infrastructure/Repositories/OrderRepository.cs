@@ -1,116 +1,120 @@
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using EFTest.Domain.Entities;
 using EFTest.Domain.Repositories;
 using EFTest.Domain.ValueObjects;
-using EFTest.Infrastructure.Data;
+using EFTest.Infrastructure.Documents;
+using EFTest.Infrastructure.Services;
 
 namespace EFTest.Infrastructure.Repositories;
 
 public class OrderRepository : IOrderRepository
 {
-    private readonly OrderContext _context;
+    private readonly IMongoDbService _mongoDbService;
+    private readonly IMongoCollection<OrderDocument> _ordersCollection;
 
-    public OrderRepository(OrderContext context)
+    public OrderRepository(IMongoDbService mongoDbService)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _mongoDbService = mongoDbService ?? throw new ArgumentNullException(nameof(mongoDbService));
+        _ordersCollection = _mongoDbService.Orders;
     }
 
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var orderEntity = await _context.Orders
-            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        var filter = Builders<OrderDocument>.Filter.Eq(o => o.Id, id);
+        var orderDocument = await _ordersCollection
+            .Find(filter)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return orderEntity != null ? MapToDomain(orderEntity) : null;
+        return orderDocument != null ? MapToDomain(orderDocument) : null;
     }
 
     public async Task<IEnumerable<Order>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var orderEntities = await _context.Orders
+        var orderDocuments = await _ordersCollection
+            .Find(Builders<OrderDocument>.Filter.Empty)
             .ToListAsync(cancellationToken);
 
-        return orderEntities.Select(MapToDomain);
+        return orderDocuments.Select(MapToDomain);
     }
 
     public async Task<IEnumerable<Order>> GetByCustomerNameAsync(string customerName, CancellationToken cancellationToken = default)
     {
-        var orderEntities = await _context.Orders
-            .Where(o => o.CustomerName.Contains(customerName))
+        var filter = Builders<OrderDocument>.Filter.Regex(o => o.CustomerName,
+            new MongoDB.Bson.BsonRegularExpression(customerName, "i"));
+
+        var orderDocuments = await _ordersCollection
+            .Find(filter)
             .ToListAsync(cancellationToken);
 
-        return orderEntities.Select(MapToDomain);
+        return orderDocuments.Select(MapToDomain);
     }
 
     public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
     {
         if (order == null) throw new ArgumentNullException(nameof(order));
 
-        var orderEntity = MapToEntity(order);
-        await _context.Orders.AddAsync(orderEntity, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        var orderDocument = MapToDocument(order);
+        await _ordersCollection.InsertOneAsync(orderDocument, cancellationToken: cancellationToken);
     }
 
     public async Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
     {
         if (order == null) throw new ArgumentNullException(nameof(order));
 
-        var orderEntity = MapToEntity(order);
-        _context.Orders.Update(orderEntity);
-        await _context.SaveChangesAsync(cancellationToken);
+        var filter = Builders<OrderDocument>.Filter.Eq(o => o.Id, order.Id);
+        var orderDocument = MapToDocument(order);
+
+        await _ordersCollection.ReplaceOneAsync(filter, orderDocument, cancellationToken: cancellationToken);
     }
 
     public async Task DeleteAsync(Order order, CancellationToken cancellationToken = default)
     {
         if (order == null) throw new ArgumentNullException(nameof(order));
 
-        var orderEntity = await _context.Orders
-            .FirstOrDefaultAsync(o => o.Id == order.Id, cancellationToken);
-
-        if (orderEntity != null)
-        {
-            _context.Orders.Remove(orderEntity);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        var filter = Builders<OrderDocument>.Filter.Eq(o => o.Id, order.Id);
+        await _ordersCollection.DeleteOneAsync(filter, cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Orders
-            .AnyAsync(o => o.Id == id, cancellationToken);
+        var filter = Builders<OrderDocument>.Filter.Eq(o => o.Id, id);
+        var count = await _ordersCollection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+        return count > 0;
     }
 
-    private Order MapToDomain(OrderEntity entity)
+    private Order MapToDomain(OrderDocument document)
     {
-        var customerName = CustomerName.Create(entity.CustomerName);
-        var order = Order.Create(customerName, entity.OrderDate);
+        var customerName = CustomerName.Create(document.CustomerName);
+        var order = Order.Create(customerName, document.OrderDate);
 
         // Use reflection to set the Id since it's protected
-        var idField = typeof(Order).BaseType!.GetField("<Id>k__BackingField", 
+        var idField = typeof(Order).BaseType!.GetField("<Id>k__BackingField",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        idField?.SetValue(order, entity.Id);
+        idField?.SetValue(order, document.Id);
 
         // Add order lines
-        foreach (var lineEntity in entity.OrderLines)
+        foreach (var lineDocument in document.OrderLines)
         {
-            var productName = ProductName.Create(lineEntity.ProductName);
-            var quantity = Quantity.Create(lineEntity.Quantity);
-            var unitPrice = Money.Create(lineEntity.UnitPrice, lineEntity.Currency);
-            
+            var productName = ProductName.Create(lineDocument.ProductName);
+            var quantity = Quantity.Create(lineDocument.Quantity);
+            var unitPrice = Money.Create(lineDocument.UnitPrice, lineDocument.Currency);
+
             order.AddOrderLine(productName, quantity, unitPrice);
         }
 
         return order;
     }
 
-    private OrderEntity MapToEntity(Order domain)
+    private OrderDocument MapToDocument(Order domain)
     {
-        var entity = new OrderEntity
+        var document = new OrderDocument
         {
             Id = domain.Id,
             OrderDate = domain.OrderDate,
             CustomerName = domain.CustomerName.Value,
             TotalAmount = domain.TotalAmount.Amount,
             Currency = domain.TotalAmount.Currency,
-            OrderLines = domain.OrderLines.Select(ol => new OrderLineEntity
+            OrderLines = domain.OrderLines.Select(ol => new OrderLineDocument
             {
                 Id = ol.Id,
                 ProductName = ol.ProductName.Value,
@@ -120,6 +124,6 @@ public class OrderRepository : IOrderRepository
             }).ToList()
         };
 
-        return entity;
+        return document;
     }
 }

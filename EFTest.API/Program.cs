@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MediatR;
@@ -6,8 +5,10 @@ using EFTest.Domain.DomainServices;
 using EFTest.Domain.Repositories;
 using EFTest.Application.Services;
 using EFTest.Application.Validators;
+using EFTest.Infrastructure.Configuration;
 using EFTest.Infrastructure.Data;
 using EFTest.Infrastructure.Repositories;
+using EFTest.Infrastructure.Services;
 using EFTest.API.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,7 +34,7 @@ A comprehensive Domain Driven Design (DDD) demonstration API for managing orders
 
 **Technology Stack:**
 - .NET 9.0 with Minimal APIs
-- MongoDB with Entity Framework Core
+- MongoDB with official MongoDB .NET Driver
 - FluentValidation for comprehensive validation
 - Docker Compose for development environment
 
@@ -76,9 +77,16 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderCommandValidator>();
 
-// Configure MongoDB Entity Framework
-builder.Services.AddDbContext<OrderContext>(options =>
-    options.UseMongoDB(builder.Configuration.GetConnectionString("MongoDb")!, "OrdersDb"));
+// Configure MongoDB Settings
+builder.Services.Configure<MongoDbSettings>(options =>
+{
+    options.ConnectionString = builder.Configuration.GetConnectionString("MongoDb")!;
+    options.DatabaseName = "OrdersDb";
+    options.OrdersCollectionName = "orders";
+});
+
+// Register MongoDB Service
+builder.Services.AddSingleton<IMongoDbService, MongoDbService>();
 
 // Register Domain Services
 builder.Services.AddScoped<IOrderDomainService, OrderDomainService>();
@@ -94,12 +102,12 @@ var app = builder.Build();
 // Seed the database
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<OrderContext>();
+    var mongoDbService = scope.ServiceProvider.GetRequiredService<IMongoDbService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
-        await DataSeeder.SeedAsync(context, logger);
+        await DataSeeder.SeedAsync(mongoDbService, logger);
     }
     catch (Exception ex)
     {

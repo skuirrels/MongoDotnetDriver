@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using MediatR;
 using EFTest.Application.Commands;
