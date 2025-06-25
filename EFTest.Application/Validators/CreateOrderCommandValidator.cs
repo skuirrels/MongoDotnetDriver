@@ -7,7 +7,7 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 {
     public CreateOrderCommandValidator()
     {
-        RuleFor(x => x.CustomerName)
+        RuleFor(x => x.CustomerName.Value)
             .NotEmpty()
             .WithMessage("Customer name is required")
             .Length(1, 100)
@@ -35,7 +35,7 @@ public class CreateOrderLineValidator : AbstractValidator<CreateOrderLineDto>
 {
     public CreateOrderLineValidator()
     {
-        RuleFor(x => x.ProductName)
+        RuleFor(x => x.ProductName.Value)
             .NotEmpty()
             .WithMessage("Product name is required")
             .Length(1, 200)
@@ -43,19 +43,19 @@ public class CreateOrderLineValidator : AbstractValidator<CreateOrderLineDto>
             .Matches(@"^[a-zA-Z0-9\s\-\.\(\)\""/]+$")
             .WithMessage("Product name contains invalid characters");
 
-        RuleFor(x => x.Quantity)
+        RuleFor(x => x.Quantity.Value)
             .GreaterThan(0)
             .WithMessage("Quantity must be greater than 0")
             .LessThanOrEqualTo(1000)
             .WithMessage("Quantity cannot exceed 1000");
 
-        RuleFor(x => x.UnitPrice)
+        RuleFor(x => x.UnitPrice.Amount)
             .GreaterThan(0)
             .WithMessage("Unit price must be greater than 0")
             .LessThan(100000)
             .WithMessage("Unit price cannot exceed $100,000");
 
-        RuleFor(x => x.Currency)
+        RuleFor(x => x.UnitPrice.Currency)
             .NotEmpty()
             .WithMessage("Currency is required")
             .Length(3)

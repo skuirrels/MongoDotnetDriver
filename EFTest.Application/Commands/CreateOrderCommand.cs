@@ -5,7 +5,7 @@ namespace EFTest.Application.Commands;
 
 public class CreateOrderCommand : IRequest<OrderDto>
 {
-    public string CustomerName { get; set; } = string.Empty;
+    public CustomerNameDto CustomerName { get; set; } = new();
     public DateTime? OrderDate { get; set; }
     public List<CreateOrderLineDto> OrderLines { get; set; } = new();
 }

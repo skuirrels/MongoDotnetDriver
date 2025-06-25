@@ -1,6 +1,6 @@
 using EFTest.Application.Commands;
 using EFTest.Application.DTOs;
-using EFTest.Application.Services;
+using EFTest.Application.Mappers;
 using EFTest.Domain.DomainServices;
 using EFTest.Domain.Repositories;
 using EFTest.Domain.ValueObjects;
@@ -12,16 +12,16 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, OrderDto>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderDomainService _orderDomainService;
-    private readonly IOrderMappingService _mappingService;
+    private readonly IOrderMapper _mapper;
 
     public UpdateOrderHandler(
         IOrderRepository orderRepository,
         IOrderDomainService orderDomainService,
-        IOrderMappingService mappingService)
+        IOrderMapper mapper)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
         _orderDomainService = orderDomainService ?? throw new ArgumentNullException(nameof(orderDomainService));
-        _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     public async Task<OrderDto> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
@@ -31,8 +31,8 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, OrderDto>
         if (order == null)
             throw new InvalidOperationException($"Order with ID {request.Id} not found");
 
-        // Update customer name if changed
-        var newCustomerName = CustomerName.Create(request.CustomerName);
+        // Update customer name if changed using mapper with structured DTOs
+        var newCustomerName = _mapper.CreateCustomerName(request.CustomerName);
         if (order.CustomerName.Value != newCustomerName.Value)
         {
             order.UpdateCustomerName(newCustomerName);
@@ -52,13 +52,13 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, OrderDto>
             order.RemoveOrderLine(lineId);
         }
 
-        // Add new order lines
+        // Add new order lines using mapper helper methods with structured DTOs
         foreach (var lineDto in request.OrderLines)
         {
-            var productName = ProductName.Create(lineDto.ProductName);
-            var quantity = Quantity.Create(lineDto.Quantity);
-            var unitPrice = Money.Create(lineDto.UnitPrice, lineDto.Currency);
-            
+            var productName = _mapper.CreateProductName(lineDto.ProductName);
+            var quantity = _mapper.CreateQuantity(lineDto.Quantity);
+            var unitPrice = _mapper.CreateMoney(lineDto.UnitPrice);
+
             order.AddOrderLine(productName, quantity, unitPrice);
         }
 
@@ -69,7 +69,7 @@ public class UpdateOrderHandler : IRequestHandler<UpdateOrderCommand, OrderDto>
         await _orderRepository.UpdateAsync(order, cancellationToken);
 
         // Map to DTO and return
-        return _mappingService.MapToDto(order);
+        return _mapper.MapToDto(order);
     }
 }
 

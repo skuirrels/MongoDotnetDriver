@@ -1,6 +1,6 @@
 using EFTest.Application.Commands;
 using EFTest.Application.DTOs;
-using EFTest.Application.Services;
+using EFTest.Application.Mappers;
 using EFTest.Domain.DomainServices;
 using EFTest.Domain.Entities;
 using EFTest.Domain.Repositories;
@@ -13,33 +13,33 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, OrderDto>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderDomainService _orderDomainService;
-    private readonly IOrderMappingService _mappingService;
+    private readonly IOrderMapper _mapper;
 
     public CreateOrderHandler(
         IOrderRepository orderRepository,
         IOrderDomainService orderDomainService,
-        IOrderMappingService mappingService)
+        IOrderMapper mapper)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
         _orderDomainService = orderDomainService ?? throw new ArgumentNullException(nameof(orderDomainService));
-        _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-        // Create value objects
-        var customerName = CustomerName.Create(request.CustomerName);
-        
+        // Create value objects using mapper helper methods with structured DTOs
+        var customerName = _mapper.CreateCustomerName(request.CustomerName);
+
         // Create order entity
         var order = Order.Create(customerName, request.OrderDate);
 
-        // Add order lines
+        // Add order lines using mapper helper methods with structured DTOs
         foreach (var lineDto in request.OrderLines)
         {
-            var productName = ProductName.Create(lineDto.ProductName);
-            var quantity = Quantity.Create(lineDto.Quantity);
-            var unitPrice = Money.Create(lineDto.UnitPrice, lineDto.Currency);
-            
+            var productName = _mapper.CreateProductName(lineDto.ProductName);
+            var quantity = _mapper.CreateQuantity(lineDto.Quantity);
+            var unitPrice = _mapper.CreateMoney(lineDto.UnitPrice);
+
             order.AddOrderLine(productName, quantity, unitPrice);
         }
 
@@ -49,7 +49,7 @@ public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, OrderDto>
         // Save to repository
         await _orderRepository.AddAsync(order, cancellationToken);
 
-        // Map to DTO and return
-        return _mappingService.MapToDto(order);
+        // Map to structured DTO and return
+        return _mapper.MapToDto(order);
     }
 }

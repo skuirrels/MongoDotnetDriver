@@ -6,7 +6,7 @@ namespace EFTest.Application.Commands;
 public class UpdateOrderCommand : IRequest<OrderDto>
 {
     public Guid Id { get; set; }
-    public string CustomerName { get; set; } = string.Empty;
+    public CustomerNameDto CustomerName { get; set; } = new();
     public DateTime OrderDate { get; set; }
     public List<UpdateOrderLineDto> OrderLines { get; set; } = new();
 }

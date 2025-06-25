@@ -3,7 +3,7 @@ using FluentValidation.AspNetCore;
 using MediatR;
 using EFTest.Domain.DomainServices;
 using EFTest.Domain.Repositories;
-using EFTest.Application.Services;
+using EFTest.Application.Mappers;
 using EFTest.Application.Validators;
 using EFTest.Infrastructure.Configuration;
 using EFTest.Infrastructure.Data;
@@ -91,8 +91,8 @@ builder.Services.AddSingleton<IMongoDbService, MongoDbService>();
 // Register Domain Services
 builder.Services.AddScoped<IOrderDomainService, OrderDomainService>();
 
-// Register Application Services
-builder.Services.AddScoped<IOrderMappingService, OrderMappingService>();
+// Register Application Services (Mapperly Mapper)
+builder.Services.AddScoped<IOrderMapper, OrderMapper>();
 
 // Register Infrastructure Services (Repositories)
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();

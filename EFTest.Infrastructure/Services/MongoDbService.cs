@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using EFTest.Infrastructure.Configuration;
-using EFTest.Application.DTOs;
+using EFTest.Domain.Entities;
 
 namespace EFTest.Infrastructure.Services;
 
@@ -36,8 +36,8 @@ public class MongoDbService : IMongoDbService
         _database = client.GetDatabase(_settings.DatabaseName);
     }
 
-    public IMongoCollection<OrderDto> Orders =>
-        _database.GetCollection<OrderDto>(_settings.OrdersCollectionName);
+    public IMongoCollection<Order> Orders =>
+        _database.GetCollection<Order>(_settings.OrdersCollectionName);
 
     public IMongoDatabase Database => _database;
 }

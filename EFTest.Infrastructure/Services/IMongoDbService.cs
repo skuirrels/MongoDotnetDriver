@@ -1,10 +1,10 @@
 using MongoDB.Driver;
-using EFTest.Application.DTOs;
+using EFTest.Domain.Entities;
 
 namespace EFTest.Infrastructure.Services;
 
 public interface IMongoDbService
 {
-    IMongoCollection<OrderDto> Orders { get; }
+    IMongoCollection<Order> Orders { get; }
     IMongoDatabase Database { get; }
 }
