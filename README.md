@@ -23,28 +23,28 @@ This is a demo Web API application built with ASP.NET Core that demonstrates CRU
 ## Project Structure
 
 ```
-EFTest/
-├── EFTest.API/                  # Web API Layer
+MongoDBDriver/
+├── MongoDBDriver.API/                  # Web API Layer
 │   ├── Endpoints/
 │   │   └── OrderEndpoints.cs    # Minimal API endpoints for Orders
 │   ├── Program.cs               # Application startup with MongoDB configuration
 │   └── appsettings.json         # Configuration with MongoDB connection string
-├── EFTest.Application/          # Application Layer (CQRS)
+├── MongoDBDriver.Application/          # Application Layer (CQRS)
 │   ├── Commands/                # Command handlers
 │   ├── Queries/                 # Query handlers
 │   ├── DTOs/                    # Data Transfer Objects
 │   └── Validators/              # FluentValidation rules
-├── EFTest.Domain/               # Domain Layer (DDD)
+├── MongoDBDriver.Domain/               # Domain Layer (DDD)
 │   ├── Entities/                # Domain entities (Order, OrderLine)
 │   ├── ValueObjects/            # Value objects (Money, CustomerName, etc.)
 │   ├── Repositories/            # Repository interfaces
 │   └── DomainServices/          # Domain services
-├── EFTest.Infrastructure/       # Infrastructure Layer
+├── MongoDBDriver.Infrastructure/       # Infrastructure Layer
 │   ├── Documents/               # MongoDB document models with BSON attributes
 │   ├── Services/                # MongoDB service implementations
 │   ├── Repositories/            # Repository implementations using MongoDB.Driver
 │   └── Configuration/           # MongoDB configuration settings
-└── EFTest.Tests/                # Unit Tests
+└── MongoDBDriver.Tests/                # Unit Tests
     ├── DomainModelTests.cs      # Domain logic validation tests
     └── OrderRepositoryTests.cs  # Repository implementation tests
 ```
@@ -84,12 +84,12 @@ EFTest/
 
 2. **Run the application**:
    ```bash
-   dotnet run --project EFTest
+   dotnet run --project MongoDBDriver
    ```
 
 4. **Access the API**: The API will be available at `https://localhost:5201` or `http://localhost:5200`
 
-5. **Test with sample requests**: Use the provided `EFTest.http` file with your HTTP client
+5. **Test with sample requests**: Use the provided `MongoDBDriver.http` file with your HTTP client
 
 ## Sample Usage
 
@@ -274,7 +274,7 @@ Run the comprehensive test suite to validate the migration:
 dotnet test
 
 # Run specific test project
-dotnet test EFTest.Tests/
+dotnet test MongoDBDriver.Tests/
 
 # Run with detailed output
 dotnet test --verbosity normal
@@ -288,7 +288,7 @@ The test suite includes:
 
 ## Docker Compose Setup
 
-The project includes a Docker Compose configuration for easy MongoDB setup with Mongo Express for database management. The Docker files are located in the `EFTest/` project directory for easy access from Rider.
+The project includes a Docker Compose configuration for easy MongoDB setup with Mongo Express for database management. The Docker files are located in the `MongoDBDriver/` project directory for easy access from Rider.
 
 ### Services Included:
 - **MongoDB Latest (8.0.9+)**: Main database server with authentication
@@ -296,9 +296,9 @@ The project includes a Docker Compose configuration for easy MongoDB setup with 
 
 ### Quick Start with Docker:
 
-1. **Navigate to the EFTest directory**:
+1. **Navigate to the MongoDBDriver directory**:
    ```bash
-   cd EFTest
+   cd MongoDBDriver
    ```
 
 2. **Start MongoDB and Mongo Express**:
@@ -311,7 +311,7 @@ The project includes a Docker Compose configuration for easy MongoDB setup with 
    docker compose ps
    ```
 
-4. **Run the application** (from EFTest directory):
+4. **Run the application** (from MongoDBDriver directory):
    ```bash
    dotnet run
    ```
@@ -323,12 +323,12 @@ The project includes a Docker Compose configuration for easy MongoDB setup with 
 ### Using with JetBrains Rider:
 
 1. **Open the solution** in Rider
-2. **Right-click on `docker-compose.yml`** in the EFTest project
+2. **Right-click on `docker-compose.yml`** in the MongoDBDriver project
 3. **Select "Run docker-compose.yml"** or use the Docker tool window
-4. **Run the EFTest project** using Rider's run configuration
+4. **Run the MongoDBDriver project** using Rider's run configuration
 5. **Access the API** and Mongo Express from the URLs above3. **Run the application**:
    ```bash
-   dotnet run --project EFTest
+   dotnet run --project MongoDBDriver
    ```
 
 4. **Access services**:

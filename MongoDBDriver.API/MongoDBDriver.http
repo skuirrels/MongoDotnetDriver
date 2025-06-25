@@ -1,0 +1,60 @@
+@MongoDBDriver_HostAddress = http://localhost:5201
+
+# Get all orders (will show seeded data)
+GET {{MongoDBDriver_HostAddress}}/api/orders
+Accept: application/json
+
+###
+
+# Get a specific order by ID (replace with actual GUID from the GET all orders response)
+GET {{MongoDBDriver_HostAddress}}/api/orders/550e8400-e29b-41d4-a716-446655440000
+Accept: application/json
+
+###
+
+# Create a new order
+POST {{MongoDBDriver_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "John Doe",
+  "orderDate": "2024-01-15T10:30:00Z",
+  "orderLines": [
+    {
+      "productName": "Laptop",
+      "quantity": 1,
+      "unitPrice": 999.99
+    },
+    {
+      "productName": "Mouse",
+      "quantity": 2,
+      "unitPrice": 25.50
+    }
+  ]
+}
+
+###
+
+# Update an existing order (replace with actual GUID)
+PUT {{MongoDBDriver_HostAddress}}/api/orders/550e8400-e29b-41d4-a716-446655440000
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "customerName": "Jane Smith",
+  "orderDate": "2024-01-16T14:30:00Z",
+  "orderLines": [
+    {
+      "productName": "Desktop Computer",
+      "quantity": 1,
+      "unitPrice": 1299.99
+    }
+  ]
+}
+
+###
+
+# Delete an order (replace with actual GUID)
+DELETE {{MongoDBDriver_HostAddress}}/api/orders/550e8400-e29b-41d4-a716-446655440000
+
+###
